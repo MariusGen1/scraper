@@ -529,14 +529,17 @@ def parse_locations() -> List[MunchLocation]:
                 # every date in the next month.
                 day = Date(date.y, date.m, date.d)
                 if day >= today.date():
-                    if hours is None:
-                        continue  # Need to fix/redo for Bruin Bowl
-
                     raw_html = fetch(loc_url + f"?date={date.y}-{date.m}-{date.d}")
                     if loc_data[1] == 868:
                         raw_html = raw_html.replace('breakfastmenu', 'dinnermenu')
                     location_date_soup = BeautifulSoup(raw_html, "html.parser")
                     location_date_periods = parse_location_meal_periods(location_date_soup, hours)
+
+                    # No hours means the location is closed today, not every
+                    # day of the week. All Day menus don't need hours, so keep
+                    # the days that still parse; skip the rest as before.
+                    if hours is None and len(location_date_periods) == 0:
+                        continue
 
                     # verify we at least have what "hours" specifices for today
                     if day == today.date() and len(location_date_periods) == 0:
